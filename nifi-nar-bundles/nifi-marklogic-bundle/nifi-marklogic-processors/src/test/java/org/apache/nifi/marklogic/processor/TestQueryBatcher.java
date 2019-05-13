@@ -175,6 +175,16 @@ class TestQueryBatcher implements QueryBatcher {
         return null;
     }
 
+    @java.lang.Override
+    public java.util.Calendar getJobStartTime() {
+        return null;
+    }
+
+    @java.lang.Override
+    public java.util.Calendar getJobEndTime() {
+        return null;
+    }
+
     @Override
     public void retryListener(QueryBatch batch, QueryBatchListener queryBatchListener) {
     }
