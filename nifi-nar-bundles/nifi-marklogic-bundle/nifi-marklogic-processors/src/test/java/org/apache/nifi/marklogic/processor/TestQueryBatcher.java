@@ -16,8 +16,6 @@
  */
 package org.apache.nifi.marklogic.processor;
 
-import java.util.concurrent.TimeUnit;
-
 import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.datamovement.ForestConfiguration;
 import com.marklogic.client.datamovement.JobTicket;
@@ -28,6 +26,9 @@ import com.marklogic.client.datamovement.QueryBatcherListener;
 import com.marklogic.client.datamovement.QueryEvent;
 import com.marklogic.client.datamovement.QueryFailureListener;
 import com.marklogic.client.query.QueryDefinition;
+
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 /*
  * Methods of QueryBatcher interface are minimally implemented for the purpose of testing.
@@ -175,13 +176,13 @@ class TestQueryBatcher implements QueryBatcher {
         return null;
     }
 
-    @java.lang.Override
-    public java.util.Calendar getJobStartTime() {
+    @Override
+    public Calendar getJobStartTime() {
         return null;
     }
 
-    @java.lang.Override
-    public java.util.Calendar getJobEndTime() {
+    @Override
+    public Calendar getJobEndTime() {
         return null;
     }
 

@@ -16,19 +16,20 @@
  */
 package org.apache.nifi.marklogic.processor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
-
+import com.marklogic.client.DatabaseClient;
+import com.marklogic.client.extensions.ResourceManager;
+import com.marklogic.client.extensions.ResourceServices.ServiceResult;
+import com.marklogic.client.extensions.ResourceServices.ServiceResultIterator;
+import com.marklogic.client.io.BytesHandle;
+import com.marklogic.client.io.Format;
+import com.marklogic.client.io.marker.AbstractWriteHandle;
+import com.marklogic.client.util.RequestParameters;
 import org.apache.nifi.annotation.behavior.DynamicProperty;
 import org.apache.nifi.annotation.behavior.InputRequirement;
+import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.behavior.SystemResource;
 import org.apache.nifi.annotation.behavior.SystemResourceConsideration;
 import org.apache.nifi.annotation.behavior.TriggerWhenEmpty;
-import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
@@ -47,14 +48,12 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.stream.io.StreamUtils;
 
-import com.marklogic.client.DatabaseClient;
-import com.marklogic.client.extensions.ResourceManager;
-import com.marklogic.client.extensions.ResourceServices.ServiceResult;
-import com.marklogic.client.extensions.ResourceServices.ServiceResultIterator;
-import com.marklogic.client.io.BytesHandle;
-import com.marklogic.client.io.Format;
-import com.marklogic.client.io.marker.AbstractWriteHandle;
-import com.marklogic.client.util.RequestParameters;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Tags({"MarkLogic", "REST", "Extension"})
 @InputRequirement(Requirement.INPUT_ALLOWED)
@@ -72,7 +71,7 @@ public class ExtensionCallMarkLogic extends AbstractMarkLogicProcessor {
             .displayName("Extension Name")
             .required(true)
             .description("Name of MarkLogic REST extension.")
-            .expressionLanguageSupported(ExpressionLanguageScope.VARIABLE_REGISTRY)
+            .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
     public static final PropertyDescriptor REQUIRES_INPUT = new PropertyDescriptor.Builder()
@@ -214,15 +213,28 @@ public class ExtensionCallMarkLogic extends AbstractMarkLogicProcessor {
             if (format != null) {
                 bytesHandle.withFormat(Format.valueOf(format));
             }
-
-            ServiceResultIterator resultIterator = resourceManager.callService(method, bytesHandle, requestParameters);
-            while(resultIterator.hasNext()) {
-                ServiceResult result = resultIterator.next();
-                session.append(flowFile, out -> out.write(result.getContent(new BytesHandle()).get()));
+            ServiceResultIterator resultIterator = null;
+            boolean success = false;
+            try {
+                resultIterator = resourceManager.callService(method, bytesHandle, requestParameters);
+                while (resultIterator.hasNext()) {
+                    ServiceResult result = resultIterator.next();
+                    session.append(flowFile, out -> out.write(result.getContent(new BytesHandle()).get()));
+                }
+                success = true;
+            } catch (Exception e) {
+                getLogger().error("ExtensionCallMarkLogic failure: " + e.getMessage());
+            } finally {
+                if (resultIterator != null) {
+                    resultIterator.close();
+                }
             }
-
             synchronized(session) {
-                session.transfer(flowFile, SUCCESS);
+                if (success) {
+                    session.transfer(flowFile, SUCCESS);
+                } else {
+                    session.transfer(flowFile, FAILURE);
+                }
                 session.commit();
             }
         } catch (final Throwable t) {
@@ -230,7 +242,7 @@ public class ExtensionCallMarkLogic extends AbstractMarkLogicProcessor {
         }
     }
 
-    protected class ExtensionResourceManager extends ResourceManager {
+    protected static class ExtensionResourceManager extends ResourceManager {
         protected ExtensionResourceManager(DatabaseClient client, String resourceName) {
             super();
             client.init(resourceName, this);

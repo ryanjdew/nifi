@@ -16,10 +16,9 @@
  */
 package org.apache.nifi.marklogic.processor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
+import com.marklogic.client.datamovement.WriteBatcher;
+import com.marklogic.client.datamovement.WriteEvent;
+import com.marklogic.client.io.Format;
 import org.apache.nifi.reporting.InitializationException;
 import org.apache.nifi.serialization.record.MockRecordParser;
 import org.apache.nifi.serialization.record.MockRecordWriter;
@@ -28,9 +27,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.marklogic.client.datamovement.WriteBatcher;
-import com.marklogic.client.datamovement.WriteEvent;
-import com.marklogic.client.io.Format;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class PutMarkLogicRecordTest extends AbstractMarkLogicProcessorTest {
     private TestPutMarkLogicRecord processor;
