@@ -83,6 +83,7 @@ public class PutMarkLogicRecordTest extends AbstractMarkLogicProcessorTest {
                 })
             );
         }
+        runner.shutdown();
     }
 
     @After

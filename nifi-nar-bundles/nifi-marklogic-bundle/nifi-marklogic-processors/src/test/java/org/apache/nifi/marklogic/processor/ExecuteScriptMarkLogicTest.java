@@ -59,6 +59,7 @@ public class ExecuteScriptMarkLogicTest extends AbstractMarkLogicProcessorTest {
         assertEquals(0, serverEval.modulePathCalls);
         assertEquals("value", serverEval.variables.get("myExternalVarible"));
         serverEval.reset();
+        runner.shutdown();
     }
 
     class TestExecuteScriptMarkLogic extends ExecuteScriptMarkLogic {
